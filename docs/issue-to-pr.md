@@ -46,9 +46,13 @@ You can pass the following arguments to the workflow:
 In [aider-github-workflows-test](https://github.com/mirrajabi/aider-github-workflows-test/issues) project you can find the following which demonstrate the full flow from Issue to generated PR.
 
 1. [An issue](https://github.com/mirrajabi/aider-github-workflows-test/issues/1) that triggers the workflow.
-1. [The workflow run](https://github.com/mirrajabi/aider-github-workflows-test/actions/runs/7364374650)
+1. [The workflow run](https://github.com/mirrajabi/aider-github-workflows-test/actions/runs/7365081934)
 1. [A Pull request](https://github.com/mirrajabi/aider-github-workflows-test/pull/2) that was created
 
 ## Roadmap
 
 - [ ] Add support for in PR chat and revisions
+
+## Disclaimer
+
+You are responsible for the AI credit that is spent. All contributors in a GitHub project will be able to label issues which will trigger the workflow. Non-contributors are not be able to tag issues which helps greatly in preventing abuse.
