@@ -1,0 +1,194 @@
+name: Aider Issue to PR workflow
+on:
+  workflow_call:
+    inputs:
+      base-branch:
+        description: 'Base branch to create PR against'
+        required: true
+        type: string
+      chat-timeout:
+        description: 'Timeout for chat in minutes to prevent burning your credits'
+        required: false
+        type: number
+        default: 10
+      issue-number:
+        description: 'Issue number'
+        required: true
+        type: number
+      model:
+        description: 'Model to use'
+        required: false
+        type: string
+        default: 'gpt-4-1106-preview'
+    secrets:
+      openai_api_key:
+        description: 'OpenAI API key'
+        required: true
+
+jobs:
+  create-pull-request:
+    permissions:
+      issues: read
+      pull-requests: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Create a new branch
+        uses: actions/github-script@v7
+        id: create_branch
+        with:
+          script: |
+            const kebabCase = (str) => str.toLowerCase().replace(/\s+/g, '-');
+
+            const fixBranchUrl = (url) => url
+              .replace(/\/git\/commits/, '/commit')
+              .replace(/api.github.com\/repos/, 'github.com');
+
+            // New branch should be based on the base-branch, so we need to get its SHA
+            const baseBranch = await github.rest.repos.getBranch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              branch: '${{ inputs.base-branch }}'
+            });
+
+            const { repo, owner } = context.repo;
+            const branchName = 'feature/aider-' + kebabCase(context.payload.issue.title);
+            const refName = `refs/heads/${branchName}`
+            const refShortName = `heads/${branchName}`
+
+            // Get existing ref if exists
+            const existingRef = await github.rest.git.getRef({
+              owner,
+              repo,
+              ref: refShortName
+            }).catch(() => null);
+
+            if (existingRef) {
+              try {
+                // If there's a branch for this ref, return the ref
+                await github.rest.repos.getBranch({
+                  owner,
+                  repo,
+                  branch: branchName
+                });
+
+                console.log(`Branch ${branchName} already exists with SHA ${existingRef.data.object.sha}`);
+                console.log(`Branch URL: ${fixBranchUrl(existingRef.data.object.url)}`);
+
+                return { ref: existingRef.data.ref }
+              } catch (e) {
+                console.error(e);
+                // State recovery: If there's a ref but no branch, delete the ref and create a new branch
+                // This can happen if the branch was deleted manually. The ref will still exist.
+                console.log(`Branch ${branchName} doesn't exist, deleting ref ${refShortName}`);
+                await github.rest.git.deleteRef({
+                  owner,
+                  repo,
+                  ref: refShortName
+                });
+              }
+            }
+
+            // Create branch
+            const result = await github.rest.git.createRef({
+              owner,
+              repo,
+              ref: refName,
+              sha: baseBranch.data.commit.sha
+            });
+
+            console.log(`Created branch ${branchName} with SHA ${result.data.object.sha}`);
+            console.log(`Branch URL: ${fixBranchUrl(result.data.object.url)}`);
+
+            return { ref: result.data.ref }
+
+      - name: Get issue
+        uses: actions/github-script@v7
+        id: get_issue
+        with:
+          script: |
+            console.log('Fetching issue #${{ inputs.issue-number }}')
+            const { repo, owner } = context.repo;
+            const result = await github.rest.issues.get({
+              owner,
+              repo,
+              issue_number: ${{ inputs.issue-number }}
+            });
+            console.log(`Fetched issue #${result.data.number}: ${result.data.title}`)
+
+            return { title: result.data.title, body: result.data.body };
+      - name: Create prompt
+        uses: actions/github-script@v7
+        id: create_prompt
+        with:
+          result-encoding: string
+          script: |
+            const title = `${{ fromJson(steps.get_issue.outputs.result).title }}`;
+            const body = `${{ fromJson(steps.get_issue.outputs.result).body }}`;
+
+            // Replace all double quotes with single quotes
+            const titleWithSingleQuotes = title.replace(/"/g, "'");
+            const bodyWithSingleQuotes = body.replace(/"/g, "'");
+
+            return `Apply all necessary changes based on below issue description. \nIssue title: ${titleWithSingleQuotes}\nIssue description:\n${bodyWithSingleQuotes}`;
+      - name: Apply changes with Aider
+        # TODO: Set explicit version
+        uses: mirrajabi/aider-github-action@main
+        timeout-minutes: ${{ inputs.chat-timeout }}
+        with:
+          openai_api_key: ${{ secrets.openai_api_key }}
+          branch: ${{ fromJson(steps.create_branch.outputs.result).ref }}
+          aider_args: '--model ${{ inputs.model }} --yes --message "${{ steps.create_prompt.outputs.result }}"'
+
+      - name: Create Pull Request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const branchRef = '${{ fromJson(steps.create_branch.outputs.result).ref }}'
+
+            // If PR already exists, return it
+            const pulls = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const existingPR = pulls.data.find((pr) => pr.head.ref === branchRef);
+            if (existingPR) {
+              console.log(`PR #${existingPR.number} already exists: ${existingPR.html_url}`);
+              return existingPR;
+            }
+
+            const newPR = await github.rest.pulls.create({
+              title: '[Aider] ' + '${{ fromJson(steps.get_issue.outputs.result).title }}',
+              owner,
+              repo,
+              head: branchRef,
+              base: 'refs/heads/${{ inputs.base-branch }}',
+              body: [
+                'This PR is auto-generated by Aider Workflow.',
+                '[mirrajabi/aider-github-action](https://github.com/mirrajabi/aider-github-action).',
+                '',
+                `Fixes #${{ inputs.issue-number }}`,
+              ].join('\n')
+            });
+            github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: newPR.data.number,
+              labels: ['automated-pr']
+            });
+
+            console.log(`Created PR #${newPR.data.number}: ${newPR.data.html_url}`);
+      - name: Upload aider chat history
+        uses: actions/upload-artifact@v2
+        with:
+          name: aider-chat-output
+          path: ".aider.chat.history.md"
