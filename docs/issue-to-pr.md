@@ -46,7 +46,7 @@ You can pass the following arguments to the workflow:
 In [aider-github-workflows-test](https://github.com/mirrajabi/aider-github-workflows-test/issues) project you can find the following which demonstrate the full flow from Issue to generated PR.
 
 1. [An issue](https://github.com/mirrajabi/aider-github-workflows-test/issues/1) that triggers the workflow.
-1. [The workflow run](https://github.com/mirrajabi/aider-github-workflows-test/actions/runs/7365081934)
+1. [The workflow run](https://github.com/mirrajabi/aider-github-workflows-test/actions/runs/7365235652)
 1. [A Pull request](https://github.com/mirrajabi/aider-github-workflows-test/pull/2) that was created
 
 ## Roadmap
