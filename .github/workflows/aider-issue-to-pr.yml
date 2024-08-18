@@ -3,26 +3,26 @@ on:
   workflow_call:
     inputs:
       base-branch:
-        description: 'Base branch to create PR against'
+        description: "Base branch to create PR against"
         required: true
         type: string
       chat-timeout:
-        description: 'Timeout for chat in minutes to prevent burning your credits'
+        description: "Timeout for chat in minutes to prevent burning your credits"
         required: false
         type: number
         default: 10
       issue-number:
-        description: 'Issue number'
+        description: "Issue number"
         required: true
         type: number
       model:
-        description: 'Model to use'
+        description: "Model to use"
         required: false
         type: string
-        default: 'gpt-4-1106-preview'
+        default: "gpt-4-1106-preview"
     secrets:
       openai_api_key:
-        description: 'OpenAI API key'
+        description: "OpenAI API key"
         required: false
       anthropic_api_key:
         description: "Anthropic API Key"
@@ -139,22 +139,20 @@ jobs:
             });
             console.log(`Fetched issue #${result.data.number}: ${result.data.title}`)
 
-            return { title: result.data.title, body: result.data.body };
+            return { 
+              title: result.data.title.replace(/"/g, "'").replace(/`/g, '\\`'), 
+              body: result.data.body.replace(/"/g, "'").replace(/`/g, '\\`'),
+            };
       - name: Create prompt
         uses: actions/github-script@v7
         id: create_prompt
         with:
           result-encoding: string
           script: |
-            const issue_meta = JSON.parse(${{ toJson(fromJson(steps.get_issue.outputs.result)) }});
-            const title = issue_meta.title;
-            const body = issue_meta.body;
+            const title = `${{ fromJson(steps.get_issue.outputs.result).title }}`;
+            const body = `${{ fromJson(steps.get_issue.outputs.result).body }}`;
 
-            // Replace all double quotes with single quotes and escape backticks
-            const titleWithSingleQuotes = title.replace(/"/g, "'").replace(/`/g, '\\`');
-            const bodyWithSingleQuotes = body.replace(/"/g, "'").replace(/`/g, '\\`');
-
-            return `Apply all necessary changes based on below issue description. \nIssue title: ${titleWithSingleQuotes}\nIssue description:\n${bodyWithSingleQuotes}`;
+            return `Apply all necessary changes based on below issue description. \nIssue title: ${title}\nIssue description:\n${body}`;
       - name: Apply changes with Aider
         uses: mirrajabi/aider-github-action@main
         timeout-minutes: ${{ inputs.chat-timeout }}
