@@ -137,13 +137,13 @@ jobs:
 
             return `Apply all necessary changes based on below issue description. \nIssue title: ${titleWithSingleQuotes}\nIssue description:\n${bodyWithSingleQuotes}`;
       - name: Apply changes with Aider
-        # TODO: Set explicit version
         uses: mirrajabi/aider-github-action@main
         timeout-minutes: ${{ inputs.chat-timeout }}
         with:
           openai_api_key: ${{ secrets.openai_api_key }}
           branch: ${{ fromJson(steps.create_branch.outputs.result).ref }}
-          aider_args: '--model ${{ inputs.model }} --yes --message "${{ steps.create_prompt.outputs.result }}"'
+          model: ${{ inputs.model }}
+          aider_args: '--yes --message "${{ steps.create_prompt.outputs.result }}"'
 
       - name: Create Pull Request
         uses: actions/github-script@v7
