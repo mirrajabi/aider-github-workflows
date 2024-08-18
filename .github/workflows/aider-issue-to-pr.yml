@@ -146,8 +146,9 @@ jobs:
         with:
           result-encoding: string
           script: |
-            const title = `${{ fromJson(steps.get_issue.outputs.result).title }}`;
-            const body = `${{ fromJson(steps.get_issue.outputs.result).body }}`;
+            const issue_meta = JSON.parse(${{ toJson(fromJson(steps.get_issue.outputs.result)) }});
+            const title = issue_meta.title;
+            const body = issue_meta.body;
 
             // Replace all double quotes with single quotes and escape backticks
             const titleWithSingleQuotes = title.replace(/"/g, "'").replace(/`/g, '\\`');
