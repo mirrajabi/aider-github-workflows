@@ -137,7 +137,7 @@ jobs:
 
             return `Apply all necessary changes based on below issue description. \nIssue title: ${titleWithSingleQuotes}\nIssue description:\n${bodyWithSingleQuotes}`;
       - name: Apply changes with Aider
-        uses: mirrajabi/aider-github-action@main
+        uses: docker://ghcr.io/mirrajabi/aider-github-action@latest
         timeout-minutes: ${{ inputs.chat-timeout }}
         with:
           openai_api_key: ${{ secrets.openai_api_key }}
