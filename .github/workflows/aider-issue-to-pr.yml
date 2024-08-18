@@ -131,9 +131,9 @@ jobs:
             const title = `${{ fromJson(steps.get_issue.outputs.result).title }}`;
             const body = `${{ fromJson(steps.get_issue.outputs.result).body }}`;
 
-            // Replace all double quotes with single quotes
-            const titleWithSingleQuotes = title.replace(/"/g, "'");
-            const bodyWithSingleQuotes = body.replace(/"/g, "'");
+            // Replace all double quotes with single quotes and escape backticks
+            const titleWithSingleQuotes = title.replace(/"/g, "'").replace(/`/g, '\\`');
+            const bodyWithSingleQuotes = body.replace(/"/g, "'").replace(/`/g, '\\`');
 
             return `Apply all necessary changes based on below issue description. \nIssue title: ${titleWithSingleQuotes}\nIssue description:\n${bodyWithSingleQuotes}`;
       - name: Apply changes with Aider
