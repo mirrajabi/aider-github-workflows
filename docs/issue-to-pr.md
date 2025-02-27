@@ -19,7 +19,7 @@ on:
 
 jobs:
   generate:
-    uses: mirrajabi/aider-github-action/.github/workflows/aider-issue-to-pr.yml@main
+    uses: mirrajabi/aider-github-workflows/.github/workflows/aider-issue-to-pr.yml@main
     # Check if the label is 'aider'
     if: github.event.label.name == 'aider'
     with:
