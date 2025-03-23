@@ -19,14 +19,18 @@ on:
 
 jobs:
   generate:
-    uses: mirrajabi/aider-github-workflows/.github/workflows/aider-issue-to-pr.yml@main
+    uses: mirrajabi/aider-github-workflows/.github/workflows/aider-issue-to-pr.yml@v1.0.0
     # Check if the label is 'aider'
     if: github.event.label.name == 'aider'
     with:
       issue-number: ${{ github.event.issue.number }}
       base-branch: ${{ github.event.repository.default_branch }}
+      # Exit if the action is taking longer than 10 minutes
+      chat-timeout: 10
+      api_key_env_name: OPENAI_API_KEY
+      model: o3-mini-2025-01-31
     secrets: 
-      openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+      api_key_env_value: ${{ secrets.OPENAI_API_KEY }}
 
 ```
 
@@ -39,7 +43,14 @@ You can pass the following arguments to the workflow:
 | `base-branch`     | Base branch to create PR against                               | **true**     | string  | -                        |
 | `chat-timeout`    | Timeout for chat in *minutes* to prevent burning your credits    | false    | number  | `10`                       |
 | `issue-number`    | Issue number                                                  | **true**     | number  | -                        |
-| `model`           | Model to use                                                  | false    | string  | `'gpt-4-1106-preview'`    |
+| `api_key_env_name`   | "The name of the environment variable. For example, OPENAI_API_KEY, ANTHROPIC_API_KEY, etc. See more info [here](https://aider.chat/docs/llms.html)       | **false** | string  | -                        |
+| `model`           | Model to use                                                  | true    | string  | -    |
+
+### Secrets
+
+| Field Name     | Description                                                   | Required | Type    | Default                  |
+|-----------------|---------------------------------------------------------------|----------|---------|--------------------------|
+| `api_key_env_value` | The API Key to use as the value of the `api_key_env_name`   | **false** | string  | -  |
 
 ## Example
 

@@ -15,32 +15,42 @@ on:
         description: "Issue number"
         required: true
         type: number
-      model:
-        description: "Model to use"
+      api_key_env_name:
+        description: "The name of the environment variable. For example, OPENAI_API_KEY, ANTHROPIC_API_KEY, etc. See more info: https://aider.chat/docs/llms.html"
+        # Will be required when the old way of passing API keys is removed.
         required: false
         type: string
-        default: "gpt-4-1106-preview"
+        default: ""
+      model:
+        description: "Model to use"
+        required: true
+        type: string
     secrets:
+      api_key_env_value:
+        description: "API key value"
+        # Will be required when the old way of passing API keys is removed.
+        required: false
+      # Deprecated and will be removed in future versions.
       openai_api_key:
-        description: "OpenAI API key"
+        description: "[Deprecated - use api_key_env_name and api_key_env_value instead] OpenAI API key"
         required: false
       anthropic_api_key:
-        description: "Anthropic API Key"
+        description: "[Deprecated - use api_key_env_name and api_key_env_value instead] Anthropic API Key"
         required: false
       gemini_api_key:
-        description: "Gemini API Key"
+        description: "[Deprecated - use api_key_env_name and api_key_env_value instead] Gemini API Key"
         required: false
       groq_api_key:
-        description: "Groq API Key"
+        description: "[Deprecated - use api_key_env_name and api_key_env_value instead] Groq API Key"
         required: false
       cohere_api_key:
-        description: "Cohere API Key"
+        description: "[Deprecated - use api_key_env_name and api_key_env_value instead] Cohere API Key"
         required: false
       deepseek_api_key:
-        description: "Deepseek API Key"
+        description: "[Deprecated - use api_key_env_name and api_key_env_value instead] Deepseek API Key"
         required: false
       openrouter_api_key:
-        description: "OpenRouter API Key"
+        description: "[Deprecated - use api_key_env_name and api_key_env_value instead] OpenRouter API Key"
         required: false
 
 jobs:
@@ -161,13 +171,15 @@ jobs:
 
             return `Apply all necessary changes based on below issue description. \nIssue title: ${title}\nIssue description:\n${body}`;
       - name: Apply changes with Aider
-        uses: mirrajabi/aider-github-action@main
+        uses: mirrajabi/aider-github-action@v1.1.0
         timeout-minutes: ${{ inputs.chat-timeout }}
         with:
           branch: ${{ fromJson(steps.create_branch.outputs.result).ref }}
           model: ${{ inputs.model }}
           aider_args: '--yes --message "${{ steps.create_prompt.outputs.result }}"'
-          # API keys
+          api_key_env_name: ${{ inputs.api_key_env_name }}
+          api_key_env_value: ${{ secrets.api_key_env_value }}
+          # Deprecated way of passing API keys. Will be removed in future versions.
           openai_api_key: ${{ secrets.openai_api_key }}
           anthropic_api_key: ${{ secrets.anthropic_api_key }}
           cohere_api_key: ${{ secrets.cohere_api_key }}
