@@ -17,6 +17,12 @@ on:
   issues:
     types: [labeled]
 
+# grants the workflow read access to issues, write access to pull requests, and write access to the repository's contents
+permissions:
+  issues: read
+  pull-requests: write
+  contents: write
+
 jobs:
   generate:
     uses: mirrajabi/aider-github-workflows/.github/workflows/aider-issue-to-pr.yml@v1.0.0
@@ -33,6 +39,20 @@ jobs:
       api_key_env_value: ${{ secrets.OPENAI_API_KEY }}
 
 ```
+
+### Setup OPENAI_API_KEY
+
+`OPENAI_API_KEY` should be set in Secrets in the GitHub repository.
+
+1. Enter your GitHub repository.
+2. Click the "Settings" tab.
+3. In the left navigation bar, find the "Security" section, click "Secrets and variables" and select "Actions".
+4. Click the "New repository secret" button.
+5. Enter `OPENAI_API_KEY` in the "Name" field.
+6. Enter your OpenAI API key in the "Secret" field.
+7. Click the "Add secret" button.
+
+This way, your GitHub Action can safely access your OpenAI API key. Your workflow file (the yaml file you provide) has been configured to use this secret. It will be read from the environment variable `secrets.OPENAI_API_KEY`.
 
 ## Inputs
 
